@@ -2,6 +2,7 @@
 import React from "react";
 import styles from "./styles.module.css";
 import Image from "next/image";
+import addImage from "@assets/add_image.png";
 import { useBoardWrite } from "./hook";
 import { IBoardWriteProps } from "./types";
 import { Modal } from "antd";
@@ -9,7 +10,7 @@ import DaumPostcodeEmbed from "react-daum-postcode";
 
 const IMAGE_SRC = {
   addImage: {
-    src: require("@assets/add_image.png"),
+    src: addImage,
     alt: "사진추가이미지",
   },
 };
