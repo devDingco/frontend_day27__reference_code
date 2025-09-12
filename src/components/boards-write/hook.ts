@@ -4,8 +4,6 @@ import { useParams, useRouter } from "next/navigation";
 import {
   CreateBoardDocument,
   FetchBoardDocument,
-  MutationUpdateBoardArgs,
-  MutationUpdateBoardCommentArgs,
   UpdateBoardDocument,
 } from "commons/graphql/graphql";
 import { IAddress } from "./types";
@@ -38,7 +36,7 @@ export const useBoardWrite = (isEdit: boolean) => {
   console.log("in useBoardWrite isEdit", isEdit);
   // 작성자 변경 불가
 
-  const [name, setName] = useState<string>(
+  const [writer, setWriter] = useState<string>(
     isEdit ? data?.fetchBoard?.writer || "" : ""
   );
 
@@ -47,20 +45,20 @@ export const useBoardWrite = (isEdit: boolean) => {
   const [title, setTitle] = useState<string>(
     isEdit && data?.fetchBoard?.title ? data?.fetchBoard.title : ""
   );
-  const [content, setContent] = useState<string>(
+  const [contents, setContents] = useState<string>(
     isEdit && data?.fetchBoard.contents ? data?.fetchBoard.contents : ""
   );
-  const [nameError, setNameError] = useState<string>("");
+  const [writerError, setWriterError] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
   const [titleError, setTitleError] = useState<string>("");
   const [contentError, setContentError] = useState<string>("");
-  const [zonecode, setZonecode] = useState<string>(
+  const [zipcode, setZipcode] = useState<string>(
     isEdit ? data?.fetchBoard?.boardAddress?.zipcode || "" : ""
   );
   const [address, setAddress] = useState<string>(
     isEdit ? data?.fetchBoard?.boardAddress?.address || "" : ""
   );
-  const [detailAddress, setDetailAddress] = useState<string>(
+  const [addressDetail, setAddressDetail] = useState<string>(
     isEdit && data?.fetchBoard?.boardAddress?.addressDetail
       ? data.fetchBoard.boardAddress.addressDetail
       : ""
@@ -69,12 +67,12 @@ export const useBoardWrite = (isEdit: boolean) => {
   // 새로고침해도 초기값 유지하기 -> 다음주에 배워요.
   useEffect(() => {
     if (isEdit && data) {
-      setName(data.fetchBoard.writer || "");
+      setWriter(data.fetchBoard.writer || "");
       setTitle(data.fetchBoard.title || "");
-      setContent(data.fetchBoard.contents || "");
-      setZonecode(data.fetchBoard.boardAddress?.zipcode || "");
+      setContents(data.fetchBoard.contents || "");
+      setZipcode(data.fetchBoard.boardAddress?.zipcode || "");
       setAddress(data.fetchBoard.boardAddress?.address || "");
-      setDetailAddress(data.fetchBoard.boardAddress?.addressDetail || "");
+      setAddressDetail(data.fetchBoard.boardAddress?.addressDetail || "");
       setYoutubeUrl(data.fetchBoard.youtubeUrl || "");
     }
   }, [data, isEdit]);
@@ -90,11 +88,11 @@ export const useBoardWrite = (isEdit: boolean) => {
   const [modalContent, setModalContent] = useState<string>("");
 
   // 값이 없는 경우, 버튼 비활성화
-  const isButtonDisabled = !name || !password || !title || !content;
+  const isButtonDisabled = !writer || !password || !title || !contents;
 
   // 변경값 상태관리
   const onChangeName = (event: ChangeEvent<HTMLInputElement>) => {
-    setName(event.target.value);
+    setWriter(event.target.value);
   };
 
   const onChangePassword = (event: ChangeEvent<HTMLInputElement>) => {
@@ -106,11 +104,11 @@ export const useBoardWrite = (isEdit: boolean) => {
   };
 
   const onChangeContent = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(event.target.value);
+    setContents(event.target.value);
   };
 
   const onChangeDetailAddress = (event: ChangeEvent<HTMLInputElement>) => {
-    setDetailAddress(event.target.value);
+    setAddressDetail(event.target.value);
   };
 
   const onChangeYoutubeUrl = (event: ChangeEvent<HTMLInputElement>) => {
@@ -133,11 +131,11 @@ export const useBoardWrite = (isEdit: boolean) => {
     if (isEdit === false) {
       let hasError = false;
 
-      if (name.trim() === "") {
-        setNameError("필수입력 사항입니다.");
+      if (writer.trim() === "") {
+        setWriterError("필수입력 사항입니다.");
         hasError = true;
       } else {
-        setNameError("");
+        setWriterError("");
       }
 
       if (password.length === 0) {
@@ -155,7 +153,7 @@ export const useBoardWrite = (isEdit: boolean) => {
         setTitleError("");
       }
 
-      if (!content?.trim()) {
+      if (!contents?.trim()) {
         setContentError("필수입력 사항입니다.");
         hasError = true;
         return;
@@ -167,15 +165,15 @@ export const useBoardWrite = (isEdit: boolean) => {
         const { data } = await createBoard({
           variables: {
             createBoardInput: {
-              writer: name,
-              password: password,
-              title: title,
-              contents: content,
-              youtubeUrl: youtubeUrl,
+              writer,
+              password,
+              title,
+              contents,
+              youtubeUrl,
               boardAddress: {
-                zipcode: zonecode,
-                address: address,
-                addressDetail: detailAddress,
+                zipcode,
+                address,
+                addressDetail,
               },
               images: ["", ""],
             },
@@ -193,12 +191,12 @@ export const useBoardWrite = (isEdit: boolean) => {
     // 기존의 글을 수정하는 경우
     else if (isEdit === true) {
       // 입력값이 비어있는 경우 수정 진행 불가
-      if (content?.trim() === "" && title?.trim() === "") {
+      if (contents?.trim() === "" && title?.trim() === "") {
         setContentError("필수입력 사항입니다.");
         setTitleError("필수입력 사항입니다.");
         return;
       }
-      if (content?.trim() === "") {
+      if (contents?.trim() === "") {
         setContentError("필수입력 사항입니다.");
         return;
       }
@@ -211,85 +209,57 @@ export const useBoardWrite = (isEdit: boolean) => {
       const 입력받은비밀번호 = prompt(
         "글을 작성할때 입력하셨던 비밀번호를 입력해주세요"
       );
-      const updateInput: any = {
-        boardAddress: {
-          zipcode: "",
-          address: "",
-          addressDetail: "",
-        },
-      };
 
-      if (title?.trim() && title !== data?.fetchBoard?.title) {
-        updateInput.title = title;
-      }
+      // 변경된 항목만 포함해 안전하게 updateBoard 호출
+      const updateInput: any = {}; // 최상위 입력 객체(처음엔 비움)
+      const boardAddressInput: any = {}; // 주소 변경분만 담는 객체
 
-      if (content?.trim() && content !== data?.fetchBoard?.contents) {
-        updateInput.contents = content;
-      }
+      if (title?.trim() && title !== data?.fetchBoard?.title) updateInput.title = title; // 제목 변경 시에만 포함
+      if (contents?.trim() && contents !== data?.fetchBoard?.contents) updateInput.contents = contents; // 내용 변경 시에만 포함
+      if (youtubeUrl?.trim() && youtubeUrl !== data?.fetchBoard?.youtubeUrl) updateInput.youtubeUrl = youtubeUrl; // 유튜브 주소 변경 시에만 포함
 
-      // youtube 주소 변경 확인
-      if (youtubeUrl?.trim() && youtubeUrl !== data?.fetchBoard?.youtubeUrl) {
-        updateInput.youtubeUrl = youtubeUrl;
-      }
+      if (zipcode?.trim() && zipcode !== data?.fetchBoard?.boardAddress?.zipcode) boardAddressInput.zipcode = zipcode; // 우편번호 변경 시
+      if (address?.trim() && address !== data?.fetchBoard?.boardAddress?.address) boardAddressInput.address = address; // 주소 변경 시
+      if (addressDetail?.trim() && addressDetail !== data?.fetchBoard?.boardAddress?.addressDetail) boardAddressInput.addressDetail = addressDetail; // 상세주소 변경 시
 
-      //주소처리
-      if (
-        zonecode?.trim() &&
-        zonecode !== data?.fetchBoard?.boardAddress?.zipcode
-      ) {
-        updateInput.boardAddress.zipcode = zonecode;
-      }
+      if (Object.keys(boardAddressInput).length > 0) updateInput.boardAddress = boardAddressInput; // 주소 중 하나라도 바뀌면 boardAddress 포함
 
-      if (
-        address?.trim() &&
-        address !== data?.fetchBoard?.boardAddress?.address
-      ) {
-        updateInput.boardAddress.address = address;
-      }
-
-      if (
-        detailAddress?.trim() &&
-        detailAddress !== data?.fetchBoard?.boardAddress?.addressDetail
-      ) {
-        updateInput.boardAddress.addressDetail = detailAddress;
-      }
-
-      // 수정된 값이 있는 항목만 API 요청
-      if (Object.keys(updateInput).length > 0) {
-        console.log("수정된 항목만 날아가고있나? ::: updateInput", updateInput);
-        try {
-          const result = await updateBoard({
-            variables: {
-              updateBoardInput: updateInput,
-              password: 입력받은비밀번호,
-              boardId: targetId,
-            },
-          });
-
-          if (result.data) {
-            console.log("기존의 글을 수정하는 경우:::", result);
-            setModalContent("수정이 완료 되었습니다");
-            setAfterSubmitModal(true);
-          } else {
-            console.log("수정에 실패하는경우");
-            setModalContent("수정에 실패하였습니다");
-            setAfterSubmitModal(true);
-          }
-        } catch (error: any) {
-          // 에러 발생 시 처리
-          const errMsg = (error as ApolloError).graphQLErrors[0] as any;
-          if (errMsg) {
-            setModalContent(errMsg.message);
-            setAfterSubmitModal(true);
-          } else {
-            console.error("네트워크에러 발생");
-            setModalContent("네트워크에러 발생하였습니다. 재시도 해주세요.");
-            setAfterSubmitModal(true);
-          }
-        }
-      } else {
+      // 변경 사항이 전혀 없으면 수정 중단
+      if (Object.keys(updateInput).length === 0) { 
         setModalContent("수정된 내용이 없습니다.");
         setAfterSubmitModal(true);
+        return;
+      }
+
+      try {
+        const result = await updateBoard({
+          variables: {
+            updateBoardInput: updateInput, // 변경된 값들만 서버에 전송
+            password: 입력받은비밀번호, // 사용자에게 prompt 로 입력 받은 인증용 비밀번호
+            boardId: targetId, // 수정할 게시글 ID
+          },
+        });
+
+        // 뮤테이션이 성공하여 data가 존재하는 경우
+        if (result.data) {
+          console.log("기존의 글을 수정하는 경우:::", result);
+          setModalContent("수정이 완료 되었습니다"); // 성공 메시지 설정
+          setAfterSubmitModal(true); // 결과 모달 열기 !
+        } else {
+          console.log("수정에 실패하는경우");
+          setModalContent("수정에 실패하였습니다");
+          setAfterSubmitModal(true);
+        }
+      } catch (error: any) {
+        const errMsg = (error as ApolloError).graphQLErrors[0] as any; // GraphQL 에러 배열의 첫번째 항목 추출
+        if (errMsg) {
+          setModalContent(errMsg.message); // 서버 에러 메시지 설정
+          setAfterSubmitModal(true); // 결과 모달 열기 !
+        } else { // 만약 GraphQL 에러가 아닌 다른 경우의 에러라면 아래와 같이 처리할래 !
+          console.error("네트워크에러 발생");
+          setModalContent("네트워크에러 발생하였습니다. 재시도 해주세요.");
+          setAfterSubmitModal(true);
+        }
       }
     }
   };
@@ -301,20 +271,20 @@ export const useBoardWrite = (isEdit: boolean) => {
   const completeHandler = (data: IAddress) => {
     console.log("주소 data", data);
     const { address, zonecode } = data;
-    setZonecode(zonecode);
+    setZipcode(zonecode);
     setAddress(address);
     setIsAddressModalOpen(false);
   };
 
   return {
-    name,
+    writer,
     data,
-    nameError,
+    writerError,
     password,
     passwordError,
     title,
     titleError,
-    content,
+    contents,
     contentError,
     isButtonDisabled,
     onChangeName,
@@ -330,11 +300,11 @@ export const useBoardWrite = (isEdit: boolean) => {
     onSearchAddress,
     isAddressModalOpen,
     completeHandler,
-    zonecode,
+    zipcode,
     address,
-    setDetailAddress,
+    setAddressDetail,
     onChangeDetailAddress,
-    detailAddress,
+    addressDetail,
     onChangeYoutubeUrl,
     youtubeUrl,
   };

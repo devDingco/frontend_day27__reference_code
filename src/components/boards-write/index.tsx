@@ -18,14 +18,14 @@ export default function BoardWritePage(props: IBoardWriteProps) {
   const { isEdit } = props;
 
   const {
-    name,
+    writer,
     data,
-    nameError,
+    writerError,
     password,
     passwordError,
     title,
     titleError,
-    content,
+    contents,
     contentError,
     isButtonDisabled,
     onChangeName,
@@ -41,11 +41,11 @@ export default function BoardWritePage(props: IBoardWriteProps) {
     onSearchAddress,
     isAddressModalOpen,
     completeHandler,
-    zonecode,
+    zipcode,
     address,
-    setDetailAddress,
+    setAddressDetail,
     onChangeDetailAddress,
-    detailAddress,
+    addressDetail,
     youtubeUrl,
     onChangeYoutubeUrl,
   } = useBoardWrite(isEdit);
@@ -67,13 +67,13 @@ export default function BoardWritePage(props: IBoardWriteProps) {
               </div>
               <input
                 disabled={isEdit}
-                value={name}
+                value={writer}
                 type="text"
                 placeholder="작성자 명을 입력해 주세요."
                 className={isEdit ? styles.disabled_input : styles.enroll_input}
                 onChange={onChangeName}
               />
-              <div className={styles.error_msg}>{nameError}</div>
+              <div className={styles.error_msg}>{writerError}</div>
             </div>
             <div className={styles.flex_half}>
               <div className={styles.enroll_form_title}>
@@ -116,7 +116,7 @@ export default function BoardWritePage(props: IBoardWriteProps) {
             <div className={styles.enroll_required_indicator}> *</div>
           </div>
           <textarea
-            value={content}
+            value={contents}
             placeholder="내용을 입력해 주세요."
             className={`${styles.enroll_input} ${styles.enroll_textarea}`}
             onChange={onChangeContent}
@@ -130,7 +130,7 @@ export default function BoardWritePage(props: IBoardWriteProps) {
 
           <div className={styles.enroll_address_firstrow}>
             <input
-              value={zonecode}
+              value={zipcode}
               readOnly
               type="number"
               className={styles.zipcode_input}
@@ -152,7 +152,7 @@ export default function BoardWritePage(props: IBoardWriteProps) {
             type="text"
           />
           <input
-            value={detailAddress}
+            value={addressDetail}
             placeholder="상세주소"
             className={styles.enroll_input}
             type="text"
